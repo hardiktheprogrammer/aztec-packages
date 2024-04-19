@@ -33,7 +33,8 @@ const __dirname = dirname(__filename);
 const privKey = AztecJs.GrumpkinScalar.random();
 
 export const browserTestSuite = (
-  setup: () => Promise<{
+  name: 'webpack' | 'vite',
+  setup: (webapp: 'webpack' | 'vite') => Promise<{
     /**
      *  The webserver instance.
      */
@@ -53,7 +54,7 @@ export const browserTestSuite = (
   }>,
   pageLogger: AztecJs.DebugLogger,
 ) =>
-  describe('e2e_aztec.js_browser', () => {
+  describe(`e2e_aztec.js_browser (${name})`, () => {
     const initialBalance = 33n;
     const transferAmount = 3n;
 
@@ -70,7 +71,7 @@ export const browserTestSuite = (
     let page: Page;
 
     beforeAll(async () => {
-      ({ server, pxeURL, pxeServer, webServerURL } = await setup());
+      ({ server, pxeURL, pxeServer, webServerURL } = await setup(name));
       testClient = AztecJs.createPXEClient(pxeURL);
       await AztecJs.waitForPXE(testClient);
 

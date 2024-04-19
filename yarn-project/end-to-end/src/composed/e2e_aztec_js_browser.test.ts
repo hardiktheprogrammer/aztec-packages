@@ -31,7 +31,7 @@ const pageLogger = createDebugLogger('aztec:e2e_aztec_browser.js:web:page');
  *       unexpectedly running in the background. Kill it with `killall chrome`
  */
 
-const setupApp = async () => {
+const setupApp = async (webapp: 'vite' | 'webpack') => {
   const { pxe: pxeService } = await setup(0);
   let pxeURL = PXE_URL;
   let pxeServer = undefined;
@@ -41,7 +41,7 @@ const setupApp = async () => {
   }
 
   const app = new Koa();
-  app.use(serve(path.resolve(__dirname, '../web')));
+  app.use(serve(path.resolve(__dirname, '../web', webapp, 'dist')));
   const server = app.listen(PORT, () => {
     logger.info(`Web Server started at http://localhost:${PORT}`);
   });
@@ -49,4 +49,5 @@ const setupApp = async () => {
   return { server, webServerURL: `http://localhost:${PORT}`, pxeServer, pxeURL };
 };
 
-browserTestSuite(setupApp, pageLogger);
+browserTestSuite('webpack', setupApp, pageLogger);
+browserTestSuite('vite', setupApp, pageLogger);
