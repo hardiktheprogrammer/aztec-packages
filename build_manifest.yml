@@ -230,6 +230,7 @@ end-to-end:
     - noir-projects
     - noir
     - yarn-project
+    - barretenberg-x86_64-linux-clang
   runDependencies:
     - aztec
 

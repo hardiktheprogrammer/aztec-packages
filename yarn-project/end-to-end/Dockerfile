@@ -2,6 +2,7 @@ FROM --platform=linux/amd64 aztecprotocol/bb.js as bb.js
 FROM --platform=linux/amd64 aztecprotocol/noir-packages as noir-packages
 FROM --platform=linux/amd64 aztecprotocol/l1-contracts as contracts
 FROM --platform=linux/amd64 aztecprotocol/noir-projects as noir-projects
+FROM --platform=linux/amd64 aztecprotocol/barretenberg-x86_64-linux-clang as bb
 FROM aztecprotocol/noir as noir
 
 FROM node:18.19.0 as builder
@@ -13,6 +14,7 @@ COPY --from=noir-packages /usr/src/noir/packages /usr/src/noir/packages
 COPY --from=contracts /usr/src/l1-contracts /usr/src/l1-contracts
 COPY --from=noir-projects /usr/src/noir-projects /usr/src/noir-projects
 COPY --from=noir /usr/src/noir/noir-repo/target/release/acvm /usr/src/noir/noir-repo/target/release/acvm
+COPY --from=bb /usr/src/barretenberg/cpp/build/bin/bb /usr/src/barretenberg/cpp/build/bin/bb
 
 WORKDIR /usr/src/yarn-project
 COPY . .
@@ -43,7 +45,7 @@ RUN /root/.foundry/bin/foundryup --version nightly-de33b6af53005037b463318d2628b
 
 # Create minimal image.
 FROM node:18.19.1-slim
-RUN apt-get update && apt-get install jq gnupg wget netcat-openbsd -y && \
+RUN apt-get update && apt-get install jq gnupg wget curl netcat-openbsd -y && \
     wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
     sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
     apt-get update && \

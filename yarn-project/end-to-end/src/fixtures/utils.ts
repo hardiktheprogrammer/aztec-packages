@@ -22,7 +22,6 @@ import {
   createDebugLogger,
   createPXEClient,
   deployL1Contracts,
-  fileURLToPath,
   makeFetch,
   waitForPXE,
 } from '@aztec/aztec.js';
@@ -33,7 +32,6 @@ import {
   computeContractAddressFromInstance,
   getContractClassFromArtifact,
 } from '@aztec/circuits.js';
-import { randomBytes } from '@aztec/foundation/crypto';
 import { makeBackoff, retry } from '@aztec/foundation/retry';
 import {
   AvailabilityOracleAbi,
@@ -55,11 +53,11 @@ import { KeyRegistryContract } from '@aztec/noir-contracts.js';
 import { GasTokenContract } from '@aztec/noir-contracts.js/GasToken';
 import { getCanonicalGasToken, getCanonicalGasTokenAddress } from '@aztec/protocol-contracts/gas-token';
 import { getCanonicalKeyRegistry } from '@aztec/protocol-contracts/key-registry';
+import { type ProverClient } from '@aztec/prover-client';
 import { PXEService, type PXEServiceConfig, createPXEService, getPXEServiceConfig } from '@aztec/pxe';
 import { type SequencerClient } from '@aztec/sequencer-client';
 
 import { type Anvil, createAnvil } from '@viem/anvil';
-import * as fs from 'fs/promises';
 import getPort from 'get-port';
 import * as path from 'path';
 import {
@@ -77,42 +75,15 @@ import { mnemonicToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
 
 import { MNEMONIC } from './fixtures.js';
+import { getACVMConfig } from './get_acvm_config.js';
 import { isMetricsLoggingRequested, setupMetricsLogger } from './logging.js';
 
 export { deployAndInitializeTokenAndBridgeContracts } from '../shared/cross_chain_test_harness.js';
 
-const {
-  PXE_URL = '',
-  NOIR_RELEASE_DIR = 'noir-repo/target/release',
-  TEMP_DIR = '/tmp',
-  ACVM_BINARY_PATH = '',
-  ACVM_WORKING_DIRECTORY = '',
-} = process.env;
+const { PXE_URL = '' } = process.env;
 
 const getAztecUrl = () => {
   return PXE_URL;
-};
-
-// Determines if we have access to the acvm binary and a tmp folder for temp files
-const getACVMConfig = async (logger: DebugLogger) => {
-  try {
-    const expectedAcvmPath = ACVM_BINARY_PATH
-      ? ACVM_BINARY_PATH
-      : `${path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../noir/', NOIR_RELEASE_DIR)}/acvm`;
-    await fs.access(expectedAcvmPath, fs.constants.R_OK);
-    const tempWorkingDirectory = `${TEMP_DIR}/${randomBytes(4).toString('hex')}`;
-    const acvmWorkingDirectory = ACVM_WORKING_DIRECTORY ? ACVM_WORKING_DIRECTORY : `${tempWorkingDirectory}/acvm`;
-    await fs.mkdir(acvmWorkingDirectory, { recursive: true });
-    logger.info(`Using native ACVM binary at ${expectedAcvmPath} with working directory ${acvmWorkingDirectory}`);
-    return {
-      acvmWorkingDirectory,
-      expectedAcvmPath,
-      directoryToCleanup: ACVM_WORKING_DIRECTORY ? undefined : tempWorkingDirectory,
-    };
-  } catch (err) {
-    logger.error(`Native ACVM not available, error: ${err}`);
-    return undefined;
-  }
 };
 
 export const setupL1Contracts = async (
@@ -279,7 +250,7 @@ async function setupWithRemoteEnvironment(
 
   const { chainId, protocolVersion } = await pxeClient.getNodeInfo();
   // this contract might already have been deployed
-  // the following deployin functions are idempotent
+  // the following deploying functions are idempotent
   await deployCanonicalKeyRegistry(
     new SignerlessWallet(pxeClient, new DefaultMultiCallEntrypoint(chainId, protocolVersion)),
   );
@@ -293,6 +264,7 @@ async function setupWithRemoteEnvironment(
   return {
     aztecNode,
     sequencer: undefined,
+    prover: undefined,
     pxe: pxeClient,
     deployL1ContractsValues,
     accounts: await pxeClient!.getRegisteredAccounts(),
@@ -333,22 +305,17 @@ export type EndToEndContext = {
   logger: DebugLogger;
   /** The cheat codes. */
   cheatCodes: CheatCodes;
+  /** Proving jobs */
+  prover: ProverClient | undefined;
   /** Function to stop the started services. */
   teardown: () => Promise<void>;
 };
 
-/**
- * Sets up the environment for the end-to-end tests.
- * @param numberOfAccounts - The number of new accounts to be created once the PXE is initiated.
- * @param opts - Options to pass to the node initialization and to the setup script.
- * @param pxeOpts - Options to pass to the PXE initialization.
- */
-export async function setup(
-  numberOfAccounts = 1,
+export async function setupNoL2Deploy(
   opts: SetupOptions = {},
   pxeOpts: Partial<PXEServiceConfig> = {},
-  enableGas = false,
-): Promise<EndToEndContext> {
+): Promise<Omit<EndToEndContext, 'wallet'>> {
+  const logger = getLogger();
   const config = { ...getConfigEnvVars(), ...opts };
 
   let anvil: Anvil | undefined;
@@ -380,6 +347,7 @@ export async function setup(
   // Enable logging metrics to a local file named after the test suite
   if (isMetricsLoggingRequested()) {
     const filename = path.join('log', getJobName() + '.jsonl');
+    logger.info(`Logging metrics to ${filename}`);
     setupMetricsLogger(filename);
   }
 
@@ -388,14 +356,13 @@ export async function setup(
     await ethCheatCodes.loadChainState(opts.stateLoad);
   }
 
-  const logger = getLogger();
   const hdAccount = mnemonicToAccount(MNEMONIC);
   const privKeyRaw = hdAccount.getHdKey().privateKey;
   const publisherPrivKey = privKeyRaw === null ? null : Buffer.from(privKeyRaw);
 
   if (PXE_URL) {
     // we are setting up against a remote environment, l1 contracts are assumed to already be deployed
-    return await setupWithRemoteEnvironment(hdAccount, config, logger, numberOfAccounts, enableGas);
+    return setupWithRemoteEnvironment(hdAccount, config, logger, 0, false);
   }
 
   const deployL1ContractsValues =
@@ -409,26 +376,15 @@ export async function setup(
   const acvmConfig = await getACVMConfig(logger);
   if (acvmConfig) {
     config.acvmWorkingDirectory = acvmConfig.acvmWorkingDirectory;
-    config.acvmBinaryPath = acvmConfig.expectedAcvmPath;
+    config.acvmBinaryPath = acvmConfig.acvmBinaryPath;
   }
   config.l1BlockPublishRetryIntervalMS = 100;
   const aztecNode = await AztecNodeService.createAndSync(config);
   const sequencer = aztecNode.getSequencer();
+  const prover = aztecNode.getProver();
 
   logger.verbose('Creating a pxe...');
-  const { pxe, wallets } = await setupPXEService(numberOfAccounts, aztecNode!, pxeOpts, logger);
-
-  logger.verbose('Deploying key registry...');
-  await deployCanonicalKeyRegistry(
-    new SignerlessWallet(pxe, new DefaultMultiCallEntrypoint(config.chainId, config.version)),
-  );
-
-  if (enableGas) {
-    logger.verbose('Deploying gas token...');
-    await deployCanonicalGasToken(
-      new SignerlessWallet(pxe, new DefaultMultiCallEntrypoint(config.chainId, config.version)),
-    );
-  }
+  const { pxe } = await setupPXEService(0, aztecNode!, pxeOpts, logger, false);
 
   const cheatCodes = CheatCodes.create(config.rpcUrl, pxe!);
 
@@ -440,10 +396,10 @@ export async function setup(
       await pxe?.stop();
     }
 
-    if (acvmConfig?.directoryToCleanup) {
+    if (acvmConfig?.cleanup) {
       // remove the temp directory created for the acvm
-      logger.verbose(`Cleaning up ACVM temp directory ${acvmConfig.directoryToCleanup}`);
-      await fs.rm(acvmConfig.directoryToCleanup, { recursive: true, force: true });
+      logger.verbose(`Cleaning up ACVM state`);
+      await acvmConfig.cleanup();
     }
 
     await anvil?.stop();
@@ -454,12 +410,51 @@ export async function setup(
     pxe,
     deployL1ContractsValues,
     config,
-    wallet: wallets[0],
-    wallets,
     logger,
     cheatCodes,
     sequencer,
+    prover,
+    wallets: [],
     teardown,
+  };
+}
+
+/**
+ * Sets up the environment for the end-to-end tests.
+ * @param numberOfAccounts - The number of new accounts to be created once the PXE is initiated.
+ * @param opts - Options to pass to the node initialization and to the setup script.
+ * @param pxeOpts - Options to pass to the PXE initialization.
+ */
+export async function setup(
+  numberOfAccounts = 1,
+  opts: SetupOptions = {},
+  pxeOpts: Partial<PXEServiceConfig> = {},
+  enableGas = false,
+): Promise<EndToEndContext> {
+  const ctx = await setupNoL2Deploy(opts, pxeOpts);
+  const wallets = await getDeployedTestAccountsWallets(ctx.pxe);
+  if (wallets.length < numberOfAccounts) {
+    const numNewAccounts = numberOfAccounts - wallets.length;
+    ctx.logger.verbose(`Deploying ${numNewAccounts} accounts...`);
+    wallets.push(...(await createAccounts(ctx.pxe, numNewAccounts)));
+  }
+
+  ctx.logger.verbose('Deploying key registry...');
+  await deployCanonicalKeyRegistry(
+    new SignerlessWallet(ctx.pxe, new DefaultMultiCallEntrypoint(ctx.config.chainId, ctx.config.version)),
+  );
+
+  if (enableGas) {
+    ctx.logger.verbose('Deploying gas token...');
+    await deployCanonicalGasToken(
+      new SignerlessWallet(ctx.pxe, new DefaultMultiCallEntrypoint(ctx.config.chainId, ctx.config.version)),
+    );
+  }
+
+  return {
+    ...ctx,
+    wallets,
+    wallet: wallets[0],
   };
 }
 
@@ -594,7 +589,7 @@ export async function expectMapping<K, V>(
 /**
  * Deploy the protocol contracts to a running instance.
  */
-export async function deployCanonicalGasToken(deployer: Wallet) {
+export async function deployCanonicalGasToken(deployer: Wallet, timeout?: number) {
   // "deploy" the Gas token as it contains public functions
   const gasPortalAddress = (await deployer.getNodeInfo()).l1ContractAddresses.gasPortalAddress;
   const canonicalGasToken = getCanonicalGasToken(gasPortalAddress);
@@ -605,14 +600,14 @@ export async function deployCanonicalGasToken(deployer: Wallet) {
 
   const gasToken = await GasTokenContract.deploy(deployer, gasPortalAddress)
     .send({ contractAddressSalt: canonicalGasToken.instance.salt, universalDeploy: true })
-    .deployed();
+    .deployed({ timeout });
 
   await expect(deployer.isContractClassPubliclyRegistered(gasToken.instance.contractClassId)).resolves.toBe(true);
   await expect(deployer.getContractInstance(gasToken.address)).resolves.toBeDefined();
   await expect(deployer.isContractPubliclyDeployed(gasToken.address)).resolves.toBe(true);
 }
 
-async function deployCanonicalKeyRegistry(deployer: Wallet) {
+async function deployCanonicalKeyRegistry(deployer: Wallet, timeout?: number) {
   const canonicalKeyRegistry = getCanonicalKeyRegistry();
 
   // We check to see if there exists a contract at the canonical Key Registry address with the same contract class id as we expect. This means that
@@ -628,7 +623,7 @@ async function deployCanonicalKeyRegistry(deployer: Wallet) {
 
   const keyRegistry = await KeyRegistryContract.deploy(deployer)
     .send({ contractAddressSalt: canonicalKeyRegistry.instance.salt, universalDeploy: true })
-    .deployed();
+    .deployed({ timeout });
 
   if (
     !keyRegistry.address.equals(canonicalKeyRegistry.address) ||

@@ -202,7 +202,7 @@ export class SnapshotManager {
     const acvmConfig = await getACVMConfig(this.logger);
     if (acvmConfig) {
       aztecNodeConfig.acvmWorkingDirectory = acvmConfig.acvmWorkingDirectory;
-      aztecNodeConfig.acvmBinaryPath = acvmConfig.expectedAcvmPath;
+      aztecNodeConfig.acvmBinaryPath = acvmConfig.acvmBinaryPath;
     }
 
     this.logger.verbose('Creating and synching an aztec node...');
@@ -254,7 +254,7 @@ export class SnapshotManager {
     const acvmConfig = await getACVMConfig(this.logger);
     if (acvmConfig) {
       aztecNodeConfig.acvmWorkingDirectory = acvmConfig.acvmWorkingDirectory;
-      aztecNodeConfig.acvmBinaryPath = acvmConfig.expectedAcvmPath;
+      aztecNodeConfig.acvmBinaryPath = acvmConfig.acvmBinaryPath;
     }
 
     this.logger.verbose('Creating aztec node...');
