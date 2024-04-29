@@ -8,20 +8,21 @@ import {
   type PublicKernelNonTailRequest,
   type PublicKernelTailRequest,
 } from '@aztec/circuit-types';
-import type {
-  BaseOrMergeRollupPublicInputs,
-  BaseParityInputs,
-  BaseRollupInputs,
-  KernelCircuitPublicInputs,
-  MergeRollupInputs,
-  NESTED_RECURSIVE_PROOF_LENGTH,
-  PublicKernelCircuitPublicInputs,
-  RECURSIVE_PROOF_LENGTH,
-  RootParityInput,
-  RootParityInputs,
-  RootRollupInputs,
-  RootRollupPublicInputs,
+import {
+  type BaseOrMergeRollupPublicInputs,
+  type BaseParityInputs,
+  type BaseRollupInputs,
+  type KernelCircuitPublicInputs,
+  type MergeRollupInputs,
+  type NESTED_RECURSIVE_PROOF_LENGTH,
+  type PublicKernelCircuitPublicInputs,
+  type RECURSIVE_PROOF_LENGTH,
+  type RootParityInput,
+  type RootParityInputs,
+  type RootRollupInputs,
+  type RootRollupPublicInputs,
 } from '@aztec/circuits.js';
+import { randomBytes } from '@aztec/foundation/crypto';
 import { AbortedError, TimeoutError } from '@aztec/foundation/error';
 import { MemoryFifo } from '@aztec/foundation/fifo';
 import { createDebugLogger } from '@aztec/foundation/log';
@@ -35,11 +36,16 @@ type ProvingJobWithResolvers<T extends ProvingRequest = ProvingRequest> = {
   signal?: AbortSignal;
 } & PromiseWithResolvers<ProvingRequestResult<T['type']>>;
 
+// this doesn't need to be crazy high as it's only meant to be unique while the job is active
+// 4 bytes -> 2^32 jobs in the queue
+const defaultIdGenerator = () => randomBytes(4).toString('hex');
+
 export class MemoryProvingQueue implements CircuitProver, ProvingJobSource {
-  private jobId = 0;
   private log = createDebugLogger('aztec:prover-client:prover-pool:queue');
   private queue = new MemoryFifo<ProvingJobWithResolvers>();
   private jobsInProgress = new Map<string, ProvingJobWithResolvers>();
+
+  constructor(private generateId = defaultIdGenerator) {}
 
   async getProvingJob({ timeoutSec = 1 } = {}): Promise<ProvingJob<ProvingRequest> | undefined> {
     try {
@@ -105,7 +111,7 @@ export class MemoryProvingQueue implements CircuitProver, ProvingJobSource {
   ): Promise<ProvingRequestResult<T['type']>> {
     const { promise, resolve, reject } = promiseWithResolvers<ProvingRequestResult<T['type']>>();
     const item: ProvingJobWithResolvers<T> = {
-      id: String(this.jobId++),
+      id: this.generateId(),
       request,
       signal,
       promise,
