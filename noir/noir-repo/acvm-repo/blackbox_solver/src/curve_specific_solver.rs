@@ -24,18 +24,11 @@ pub trait BlackBoxFunctionSolver {
         inputs: &[FieldElement],
         domain_separator: u32,
     ) -> Result<FieldElement, BlackBoxResolutionError>;
-    fn fixed_base_scalar_mul(
+    fn multi_scalar_mul(
         &self,
-        low: &FieldElement,
-        high: &FieldElement,
-    ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError>;
-    fn variable_base_scalar_mul(
-        &self,
-        point_x: &FieldElement,
-        point_y: &FieldElement,
-        scalar_low: &FieldElement,
-        scalar_high: &FieldElement,
-    ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError>;
+        points: &[FieldElement],
+        scalars: &[FieldElement],
+    ) -> Result<Vec<FieldElement>, BlackBoxResolutionError>;
     fn ec_add(
         &self,
         input1_x: &FieldElement,
@@ -85,12 +78,12 @@ impl BlackBoxFunctionSolver for StubbedBlackBoxSolver {
     ) -> Result<FieldElement, BlackBoxResolutionError> {
         Err(Self::fail(BlackBoxFunc::PedersenHash))
     }
-    fn fixed_base_scalar_mul(
+    fn multi_scalar_mul(
         &self,
         _low: &FieldElement,
         _high: &FieldElement,
     ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
-        Err(Self::fail(BlackBoxFunc::FixedBaseScalarMul))
+        Err(Self::fail(BlackBoxFunc::MultiScalarMul))
     }
     fn variable_base_scalar_mul(
         &self,

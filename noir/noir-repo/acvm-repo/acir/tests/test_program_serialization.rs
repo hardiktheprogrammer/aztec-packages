@@ -58,8 +58,8 @@ fn addition_circuit() {
 }
 
 #[test]
-fn fixed_base_scalar_mul_circuit() {
-    let fixed_base_scalar_mul = Opcode::BlackBoxFuncCall(BlackBoxFuncCall::FixedBaseScalarMul {
+fn multi_scalar_mul_circuit() {
+    let multi_scalar_mul = Opcode::BlackBoxFuncCall(BlackBoxFuncCall::MultiScalarMul {
         low: FunctionInput { witness: Witness(1), num_bits: 128 },
         high: FunctionInput { witness: Witness(2), num_bits: 128 },
         outputs: (Witness(3), Witness(4)),
@@ -67,7 +67,7 @@ fn fixed_base_scalar_mul_circuit() {
 
     let circuit = Circuit {
         current_witness_index: 5,
-        opcodes: vec![fixed_base_scalar_mul],
+        opcodes: vec![multi_scalar_mul],
         private_parameters: BTreeSet::from([Witness(1), Witness(2)]),
         return_values: PublicInputs(BTreeSet::from_iter(vec![Witness(3), Witness(4)])),
         ..Circuit::default()

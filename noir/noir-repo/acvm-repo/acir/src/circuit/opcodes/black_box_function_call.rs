@@ -80,7 +80,7 @@ pub enum BlackBoxFuncCall {
         hashed_message: Box<[FunctionInput; 32]>,
         output: Witness,
     },
-    FixedBaseScalarMul {
+    MultiScalarMul {
         low: FunctionInput,
         high: FunctionInput,
         outputs: (Witness, Witness),
@@ -195,7 +195,7 @@ impl BlackBoxFuncCall {
             BlackBoxFuncCall::PedersenHash { .. } => BlackBoxFunc::PedersenHash,
             BlackBoxFuncCall::EcdsaSecp256k1 { .. } => BlackBoxFunc::EcdsaSecp256k1,
             BlackBoxFuncCall::EcdsaSecp256r1 { .. } => BlackBoxFunc::EcdsaSecp256r1,
-            BlackBoxFuncCall::FixedBaseScalarMul { .. } => BlackBoxFunc::FixedBaseScalarMul,
+            BlackBoxFuncCall::MultiScalarMul { .. } => BlackBoxFunc::MultiScalarMul,
             BlackBoxFuncCall::VariableBaseScalarMul { .. } => BlackBoxFunc::VariableBaseScalarMul,
             BlackBoxFuncCall::EmbeddedCurveAdd { .. } => BlackBoxFunc::EmbeddedCurveAdd,
             BlackBoxFuncCall::Keccak256 { .. } => BlackBoxFunc::Keccak256,
@@ -239,7 +239,7 @@ impl BlackBoxFuncCall {
             | BlackBoxFuncCall::BigIntMul { .. }
             | BlackBoxFuncCall::BigIntDiv { .. }
             | BlackBoxFuncCall::BigIntToLeBytes { .. } => Vec::new(),
-            BlackBoxFuncCall::FixedBaseScalarMul { low, high, .. } => vec![*low, *high],
+            BlackBoxFuncCall::MultiScalarMul { low, high, .. } => vec![*low, *high],
             BlackBoxFuncCall::VariableBaseScalarMul {
                 point_x,
                 point_y,
@@ -345,7 +345,7 @@ impl BlackBoxFuncCall {
             | BlackBoxFuncCall::EcdsaSecp256k1 { output, .. }
             | BlackBoxFuncCall::PedersenHash { output, .. }
             | BlackBoxFuncCall::EcdsaSecp256r1 { output, .. } => vec![*output],
-            BlackBoxFuncCall::FixedBaseScalarMul { outputs, .. }
+            BlackBoxFuncCall::MultiScalarMul { outputs, .. }
             | BlackBoxFuncCall::VariableBaseScalarMul { outputs, .. }
             | BlackBoxFuncCall::PedersenCommitment { outputs, .. }
             | BlackBoxFuncCall::EmbeddedCurveAdd { outputs, .. } => vec![outputs.0, outputs.1],

@@ -1,4 +1,4 @@
-#include "fixed_base_scalar_mul.hpp"
+#include "multi_scalar_mul.hpp"
 #include "barretenberg/dsl/types.hpp"
 #include "barretenberg/ecc/curves/bn254/fr.hpp"
 #include "barretenberg/ecc/curves/grumpkin/grumpkin.hpp"
@@ -6,7 +6,7 @@
 
 namespace acir_format {
 
-template <typename Builder> void create_fixed_base_constraint(Builder& builder, const FixedBaseScalarMul& input)
+template <typename Builder> void create_fixed_base_constraint(Builder& builder, const MultiScalarMul& input)
 {
     using cycle_group_ct = bb::stdlib::cycle_group<Builder>;
     using cycle_scalar_ct = typename bb::stdlib::cycle_group<Builder>::cycle_scalar;
@@ -26,8 +26,8 @@ template <typename Builder> void create_fixed_base_constraint(Builder& builder, 
 }
 
 template void create_fixed_base_constraint<UltraCircuitBuilder>(UltraCircuitBuilder& builder,
-                                                                const FixedBaseScalarMul& input);
+                                                                const MultiScalarMul& input);
 template void create_fixed_base_constraint<GoblinUltraCircuitBuilder>(GoblinUltraCircuitBuilder& builder,
-                                                                      const FixedBaseScalarMul& input);
+                                                                      const MultiScalarMul& input);
 
 } // namespace acir_format

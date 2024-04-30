@@ -315,10 +315,10 @@ impl DebugShow {
                     result
                 );
             }
-            BlackBoxOp::FixedBaseScalarMul { low, high, result } => {
+            BlackBoxOp::MultiScalarMul { low, high, outputs: result } => {
                 debug_println!(
                     self.enable_debug_trace,
-                    "  FIXED_BASE_SCALAR_MUL {} {} -> {}",
+                    "  MULTI_SCALAR_MUL {} {} -> {}",
                     low,
                     high,
                     result

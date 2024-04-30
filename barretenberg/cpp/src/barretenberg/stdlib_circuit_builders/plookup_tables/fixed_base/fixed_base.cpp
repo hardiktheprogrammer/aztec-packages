@@ -47,6 +47,7 @@ table::single_lookup_table table::generate_single_lookup_table(const affine_elem
  * @tparam num_bits
  * @param input
  * @return table::fixed_base_scalar_mul_tables
+ * TODO(benesjan): should this be updated?
  */
 template <size_t num_bits> table::fixed_base_scalar_mul_tables table::generate_tables(const affine_element& input)
 {

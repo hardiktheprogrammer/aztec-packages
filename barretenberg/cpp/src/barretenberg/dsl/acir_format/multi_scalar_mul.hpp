@@ -5,7 +5,7 @@
 
 namespace acir_format {
 
-struct FixedBaseScalarMul {
+struct MultiScalarMul {
     uint32_t low;
     uint32_t high;
     uint32_t pub_key_x;
@@ -13,9 +13,9 @@ struct FixedBaseScalarMul {
 
     // for serialization, update with any new fields
     MSGPACK_FIELDS(low, high, pub_key_x, pub_key_y);
-    friend bool operator==(FixedBaseScalarMul const& lhs, FixedBaseScalarMul const& rhs) = default;
+    friend bool operator==(MultiScalarMul const& lhs, MultiScalarMul const& rhs) = default;
 };
 
-template <typename Builder> void create_fixed_base_constraint(Builder& builder, const FixedBaseScalarMul& input);
+template <typename Builder> void create_multi_scalar_mul_constraint(Builder& builder, const MultiScalarMul& input);
 
 } // namespace acir_format

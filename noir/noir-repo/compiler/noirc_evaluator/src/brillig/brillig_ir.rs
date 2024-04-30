@@ -167,7 +167,7 @@ pub(crate) mod tests {
         ) -> Result<FieldElement, BlackBoxResolutionError> {
             Ok(6_u128.into())
         }
-        fn fixed_base_scalar_mul(
+        fn multi_scalar_mul(
             &self,
             _low: &FieldElement,
             _high: &FieldElement,

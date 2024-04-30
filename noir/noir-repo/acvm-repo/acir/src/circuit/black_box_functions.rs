@@ -37,7 +37,7 @@ pub enum BlackBoxFunc {
     /// Verifies a ECDSA signature over the secp256r1 curve.
     EcdsaSecp256r1,
     /// Performs scalar multiplication over the embedded curve on which [`FieldElement`][acir_field::FieldElement] is defined and a fixed base/generator point G1.
-    FixedBaseScalarMul,
+    MultiScalarMul,
     /// Performs scalar multiplication over the embedded curve on which [`FieldElement`][acir_field::FieldElement] is defined and a variable base/input point P.
     VariableBaseScalarMul,
     /// Calculates the Keccak256 hash of the inputs.
@@ -83,7 +83,7 @@ impl BlackBoxFunc {
             BlackBoxFunc::PedersenCommitment => "pedersen_commitment",
             BlackBoxFunc::PedersenHash => "pedersen_hash",
             BlackBoxFunc::EcdsaSecp256k1 => "ecdsa_secp256k1",
-            BlackBoxFunc::FixedBaseScalarMul => "fixed_base_scalar_mul",
+            BlackBoxFunc::MultiScalarMul => "multi_scalar_mul",
             BlackBoxFunc::VariableBaseScalarMul => "variable_base_scalar_mul",
             BlackBoxFunc::EmbeddedCurveAdd => "embedded_curve_add",
             BlackBoxFunc::AND => "and",
@@ -114,7 +114,7 @@ impl BlackBoxFunc {
             "pedersen_hash" => Some(BlackBoxFunc::PedersenHash),
             "ecdsa_secp256k1" => Some(BlackBoxFunc::EcdsaSecp256k1),
             "ecdsa_secp256r1" => Some(BlackBoxFunc::EcdsaSecp256r1),
-            "fixed_base_scalar_mul" => Some(BlackBoxFunc::FixedBaseScalarMul),
+            "multi_scalar_mul" => Some(BlackBoxFunc::MultiScalarMul),
             "variable_base_scalar_mul" => Some(BlackBoxFunc::VariableBaseScalarMul),
             "embedded_curve_add" => Some(BlackBoxFunc::EmbeddedCurveAdd),
             "and" => Some(BlackBoxFunc::AND),
