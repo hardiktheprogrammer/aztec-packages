@@ -5,7 +5,8 @@ use dep::aztec::prelude::{
 use dep::aztec::{
     context::{PublicContext, Context}, hash::pedersen_hash,
     protocol_types::constants::MAX_NOTE_HASH_READ_REQUESTS_PER_CALL,
-    note::{note_getter::view_notes, note_getter_options::SortOrder}
+    note::{note_getter::view_notes, note_getter_options::SortOrder},
+    keys::assert_public_key_freshness::get_fresh_nullifier_public_key_hash,
 };
 use crate::types::token_note::{TokenNote, OwnedNote};
 
@@ -61,7 +62,7 @@ impl<T> BalancesMap<T> {
         addend: U128
     ) where T: NoteInterface<T_SERIALIZED_LEN> + OwnedNote {
         // Lookup in registry
-        let nullifier_public_key_hash = 0;
+        let nullifier_public_key_hash = get_fresh_nullifier_public_key_hash(self.map.context.private.unwrap(), owner);
         let mut addend_note = T::new(addend, nullifier_public_key_hash);
 
         // docs:start:insert
