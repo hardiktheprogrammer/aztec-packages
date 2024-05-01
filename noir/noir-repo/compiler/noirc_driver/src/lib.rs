@@ -103,6 +103,10 @@ pub struct CompileOptions {
     /// Force Brillig output (for step debugging)
     #[arg(long, hide = true)]
     pub force_brillig: bool,
+
+    /// Outputs the paths to any modified artifacts
+    #[arg(long, hide = true)]
+    pub show_artifact_paths: bool,
 }
 
 fn parse_expression_width(input: &str) -> Result<ExpressionWidth, std::io::Error> {
