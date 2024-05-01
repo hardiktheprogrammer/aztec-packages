@@ -1,19 +1,19 @@
 import {
+  ExtendedUnencryptedL2Log,
+  LogId,
+  LogType,
+  TxReceipt,
+  TxStatus,
   type Body,
   type EncryptedL2BlockL2Logs,
-  ExtendedUnencryptedL2Log,
   type FromLogType,
   type GetUnencryptedLogsResponse,
   type InboxLeaf,
   type L2Block,
   type L2BlockL2Logs,
   type LogFilter,
-  LogId,
-  LogType,
   type TxEffect,
   type TxHash,
-  TxReceipt,
-  TxStatus,
   type UnencryptedL2BlockL2Logs,
 } from '@aztec/circuit-types';
 import { Fr, INITIAL_L2_BLOCK_NUM } from '@aztec/circuits.js';
@@ -266,10 +266,18 @@ export class MemoryArchiverStore implements ArchiverDataStore {
    */
   public getSettledTxReceipt(txHash: TxHash): Promise<TxReceipt | undefined> {
     for (const block of this.l2Blocks) {
-      const txHashes = block.body.txEffects.map(txEffect => txEffect.txHash);
-      for (const currentTxHash of txHashes) {
-        if (currentTxHash.equals(txHash)) {
-          return Promise.resolve(new TxReceipt(txHash, TxStatus.MINED, '', block.hash().toBuffer(), block.number));
+      for (const txEffect of block.body.txEffects) {
+        if (txEffect.txHash.equals(txHash)) {
+          return Promise.resolve(
+            new TxReceipt(
+              txHash,
+              TxStatus.MINED,
+              '',
+              txEffect.transactionFee.toBigInt(),
+              block.hash().toBuffer(),
+              block.number,
+            ),
+          );
         }
       }
     }
