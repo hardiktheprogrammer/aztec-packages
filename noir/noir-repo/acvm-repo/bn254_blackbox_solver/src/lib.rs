@@ -89,12 +89,12 @@ impl BlackBoxFunctionSolver for Bn254BlackBoxSolver {
         })
     }
 
-    fn multi_scalar_mull(
+    fn multi_scalar_mul(
         &self,
         points: &[FieldElement],
         scalars: &[FieldElement],
     ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
-        multi_scalar_mull(points, scalars)
+        multi_scalar_mul(points, scalars)
     }
 
     fn ec_add(
