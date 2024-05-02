@@ -1,3 +1,4 @@
+// TODO(benesjan): after nuking grumpkin_sclar_mul.nr this is not used in std. Move it to noir protocol circuits?
 struct GrumpkinScalar {
     low: Field,
     high: Field,
