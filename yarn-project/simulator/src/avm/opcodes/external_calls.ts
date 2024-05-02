@@ -3,6 +3,7 @@ import { padArrayEnd } from '@aztec/foundation/collection';
 
 import { executePublicFunction } from '../../public/executor.js';
 import {
+    convertAvmResultsToPxResult,
   convertPublicExecutionResult,
   createPublicExecutionContext,
   updateAvmContextFromPublicExecutionResult,
@@ -14,6 +15,7 @@ import { type AvmContractCallResults } from '../avm_message_call_result.js';
 import { Opcode, OperandType } from '../serialization/instruction_serialization.js';
 import { Addressing } from './addressing_mode.js';
 import { Instruction } from './instruction.js';
+import { AvmSimulator } from '../avm_simulator.js';
 
 abstract class ExternalCall extends Instruction {
   // Informs (de)serialization. See Instruction.deserialize.
@@ -69,7 +71,7 @@ abstract class ExternalCall extends Instruction {
     const totalGas = sumGas(this.gasCost(memoryOperations), allocatedGas);
     context.machineState.consumeGas(totalGas);
 
-    // TRANSITIONAL: This should be removed once the AVM is fully operational and the public executor is gone.
+    // TRANSITIONAL: This should be removed once the kernel handles and entire enqueued call per circuit
     const nestedContext = context.createNestedContractCallContext(
       callAddress.toFr(),
       calldata,
@@ -77,13 +79,17 @@ abstract class ExternalCall extends Instruction {
       this.type,
       FunctionSelector.fromField(functionSelector),
     );
-    const pxContext = createPublicExecutionContext(nestedContext, calldata);
-    const pxResults = await executePublicFunction(pxContext, /*nested=*/ true);
+
+    const startPxContext = createPublicExecutionContext(nestedContext, calldata);
+    const startSideEffectCounter = nestedContext.persistableState.trace.accessCounter;
+    const nestedCallResults: AvmContractCallResults = await new AvmSimulator(nestedContext).execute();
+
+    const pxResults = convertAvmResultsToPxResult(nestedCallResults, startSideEffectCounter, startPxContext, nestedContext);
     // store the old PublicExecutionResult object to maintain a recursive data structure for the old kernel
     context.persistableState.transitionalExecutionResult.nestedExecutions.push(pxResults);
-    const nestedCallResults: AvmContractCallResults = convertPublicExecutionResult(pxResults);
-    updateAvmContextFromPublicExecutionResult(nestedContext, pxResults);
     const nestedPersistableState = nestedContext.persistableState;
+    // END TRANSITIONAL
+
     // const nestedContext = context.createNestedContractCallContext(
     //   callAddress.toFr(),
     //   calldata,

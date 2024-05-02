@@ -26,7 +26,7 @@ import { PackedValuesCache } from '../common/packed_values_cache.js';
 import { type CommitmentsDB, type PublicContractsDB, type PublicStateDB } from './db.js';
 import { type PublicExecution, type PublicExecutionResult, checkValidStaticCall } from './execution.js';
 import { PublicExecutionContext } from './public_execution_context.js';
-import { convertAvmResults, createAvmExecutionEnvironment, isAvmBytecode } from './transitional_adaptors.js';
+import { convertAvmResults, convertAvmResultsToPxResult, createAvmExecutionEnvironment, isAvmBytecode } from './transitional_adaptors.js';
 
 /**
  * Execute a public function and return the execution result.
@@ -66,6 +66,8 @@ async function executePublicFunctionAvm(executionContext: PublicExecutionContext
     executionContext.commitmentsDb,
   );
   const worldStateJournal = new AvmPersistableStateManager(hostStorage);
+  const startSideEffectCounter = executionContext.execution.callContext.sideEffectCounter;
+  worldStateJournal.trace.accessCounter = startSideEffectCounter;
 
   const executionEnv = createAvmExecutionEnvironment(
     executionContext.execution,
@@ -76,17 +78,16 @@ async function executePublicFunctionAvm(executionContext: PublicExecutionContext
   );
 
   const machineState = new AvmMachineState(executionContext.availableGas);
-  const context = new AvmContext(worldStateJournal, executionEnv, machineState);
-  const simulator = new AvmSimulator(context);
+  const avmContext = new AvmContext(worldStateJournal, executionEnv, machineState);
+  const simulator = new AvmSimulator(avmContext);
 
-  const result = await simulator.execute();
-  const newWorldState = context.persistableState.flush();
+  const avmResult = await simulator.execute();
 
   log.verbose(
-    `[AVM] ${address.toString()}:${selector} returned, reverted: ${result.reverted}, reason: ${result.revertReason}.`,
+    `[AVM] ${address.toString()}:${selector} returned, reverted: ${avmResult.reverted}, reason: ${avmResult.revertReason}.`,
   );
 
-  return await convertAvmResults(executionContext, newWorldState, result, machineState);
+  return Promise.resolve(convertAvmResultsToPxResult(avmResult, startSideEffectCounter, executionContext, avmContext));
 }
 
 async function executePublicFunctionAcvm(

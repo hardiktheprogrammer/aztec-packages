@@ -21,7 +21,7 @@ import { type AvmContext } from '../avm/avm_context.js';
 import { AvmExecutionEnvironment } from '../avm/avm_execution_environment.js';
 import { type AvmMachineState } from '../avm/avm_machine_state.js';
 import { AvmContractCallResults } from '../avm/avm_message_call_result.js';
-import { type JournalData } from '../avm/journal/journal.js';
+import { AvmPersistableStateManager, type JournalData } from '../avm/journal/journal.js';
 import { Mov } from '../avm/opcodes/memory.js';
 import { createSimulationError } from '../common/errors.js';
 import { PackedValuesCache, SideEffectCounter } from '../index.js';
@@ -95,6 +95,25 @@ export function createPublicExecutionContext(avmContext: AvmContext, calldata: F
 
   return context;
 }
+
+export function convertAvmResultsToPxResult(avmResult: AvmContractCallResults, startSideEffectCounter: number, startPxContext: PublicExecutionContext, endAvmContext: AvmContext): PublicExecutionResult {
+  const endPersistableState = endAvmContext.persistableState;
+  const endMachineState = endAvmContext.machineState;
+  return {
+    ...endPersistableState.transitionalExecutionResult, // includes nestedExecutions
+    execution: startPxContext.execution,
+    returnValues: avmResult.output,
+    startSideEffectCounter: new Fr(startSideEffectCounter),
+    endSideEffectCounter: new Fr(endPersistableState.trace.accessCounter),
+    unencryptedLogs: new UnencryptedFunctionL2Logs(endPersistableState.transitionalExecutionResult.unencryptedLogs),
+    reverted: avmResult.reverted,
+    revertReason: avmResult.revertReason ? createSimulationError(avmResult.revertReason) : undefined,
+    startGasLeft: startPxContext.availableGas,
+    endGasLeft: endMachineState.gasLeft,
+    transactionFee: startPxContext.transactionFee,
+  };
+}
+
 
 /**
  * Convert the result of an AVM contract call to a PublicExecutionResult for the public kernel
