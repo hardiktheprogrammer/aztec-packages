@@ -189,37 +189,19 @@ pub(crate) fn convert_black_box_call(
             }
         }
         BlackBoxFunc::MultiScalarMul => {
-            if let ([points, scalars], [outputs]) = (function_arguments, function_results) {
+            if let ([points, scalars], [BrilligVariable::BrilligArray(outputs)]) =
+                (function_arguments, function_results)
+            {
                 let points = convert_array_or_vector(brillig_context, points, bb_func);
                 let scalars = convert_array_or_vector(brillig_context, scalars, bb_func);
-                let outputs = convert_array_or_vector(brillig_context, outputs, bb_func);
                 brillig_context.black_box_op_instruction(BlackBoxOp::MultiScalarMul {
-                    points,
-                    scalars,
-                    outputs,
+                    points: points.to_heap_vector(),
+                    scalars: scalars.to_heap_vector(),
+                    outputs: outputs.to_heap_array(),
                 });
             } else {
                 unreachable!(
                     "ICE: MultiScalarMul expects two register arguments and one array result"
-                )
-            }
-        }
-        BlackBoxFunc::VariableBaseScalarMul => {
-            if let (
-                [BrilligVariable::SingleAddr(point_x), BrilligVariable::SingleAddr(point_y), BrilligVariable::SingleAddr(scalar_low), BrilligVariable::SingleAddr(scalar_high)],
-                [BrilligVariable::BrilligArray(result_array)],
-            ) = (function_arguments, function_results)
-            {
-                brillig_context.black_box_op_instruction(BlackBoxOp::VariableBaseScalarMul {
-                    point_x: point_x.address,
-                    point_y: point_y.address,
-                    scalar_low: scalar_low.address,
-                    scalar_high: scalar_high.address,
-                    result: result_array.to_heap_array(),
-                });
-            } else {
-                unreachable!(
-                    "ICE: VariableBaseScalarMul expects four register arguments and one array result"
                 )
             }
         }

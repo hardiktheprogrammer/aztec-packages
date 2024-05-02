@@ -279,8 +279,8 @@ impl GeneratedAcir {
                 }
             }
             BlackBoxFunc::MultiScalarMul => BlackBoxFuncCall::MultiScalarMul {
-                low: inputs[0][0],
-                high: inputs[1][0],
+                points: inputs[0].clone(),
+                scalars: inputs[1].clone(),
                 outputs: (outputs[0], outputs[1]),
             },
             BlackBoxFunc::EmbeddedCurveAdd => BlackBoxFuncCall::EmbeddedCurveAdd {
@@ -665,13 +665,8 @@ fn black_box_func_expected_input_size(name: BlackBoxFunc) -> Option<usize> {
         | BlackBoxFunc::EcdsaSecp256k1
         | BlackBoxFunc::EcdsaSecp256r1 => None,
 
-        // Inputs for fixed based scalar multiplication
-        // is the low and high limbs of the scalar
-        BlackBoxFunc::MultiScalarMul => Some(2),
-
-        // Inputs for variable based scalar multiplication are the x and y coordinates of the base point and low
-        // and high limbs of the scalar
-        BlackBoxFunc::VariableBaseScalarMul => Some(4),
+        // Inputs for multi scalar multiplication is an arbitrary number of [point, scalar] pairs.
+        BlackBoxFunc::MultiScalarMul => None,
 
         // Recursive aggregation has a variable number of inputs
         BlackBoxFunc::RecursiveAggregation => None,
