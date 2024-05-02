@@ -1,5 +1,5 @@
 [package]
-name = "embedded_curve"
+name = "embedded_curve_ops"
 type = "bin"
 authors = [""]
 
