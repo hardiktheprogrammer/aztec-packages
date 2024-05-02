@@ -149,8 +149,6 @@ mod grumpkin_multi_scalar_mul {
         let max_limb = FieldElement::from(u128::MAX);
         let invalid_limb = max_limb + FieldElement::one();
 
-        let scalars = [FieldElement::one(), invalid_limb];
-
         let expected_error = Err(BlackBoxResolutionError::Failed(
             BlackBoxFunc::MultiScalarMul,
             "Limb 0000000000000000000000000000000100000000000000000000000000000000 is not less than 2^128".into(),

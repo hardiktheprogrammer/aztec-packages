@@ -7,13 +7,13 @@ sidebar_position: 1
 
 import BlackBoxInfo from '@site/src/components/Notes/_blackbox.mdx';
 
-## scalar_mul::fixed_base_embedded_curve
+## scalar_mul::multi_scalar_mul_embedded_curve
 
 Performs scalar multiplication over the embedded curve whose coordinates are defined by the
 configured noir field. For the BN254 scalar field, this is BabyJubJub or Grumpkin.
 
-```rust title="fixed_base_embedded_curve" showLineNumbers 
-pub fn fixed_base_embedded_curve(
+```rust title="multi_scalar_mul_embedded_curve" showLineNumbers 
+pub fn multi_scalar_mul_embedded_curve(
     low: Field,
     high: Field
 ) -> [Field; 2]
@@ -25,7 +25,7 @@ example
 
 ```rust
 fn main(x : Field) {
-    let scal = std::scalar_mul::fixed_base_embedded_curve(x);
+    let scal = std::scalar_mul::multi_scalar_mul_embedded_curve(x);
     println(scal);
 }
 ```

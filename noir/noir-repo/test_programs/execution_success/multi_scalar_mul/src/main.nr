@@ -2,7 +2,7 @@ use dep::std;
 
 fn main(point_x: pub Field, point_y: pub Field, scalar_low: pub Field, scalar_high: pub Field) {
     // We multiply the point by 3 and check it matches result out of embedded_curve_add func
-    let res = std::scalar_mul::variable_base_embedded_curve(point_x, point_y, scalar_low, scalar_high);
+    let res = std::scalar_mul::variable_base_embedded_curve([point_x, point_y], [scalar_low, scalar_high]);
 
     let point = std::scalar_mul::EmbeddedCurvePoint { x: point_x, y: point_y };
 
@@ -29,5 +29,5 @@ unconstrained fn get_brillig_result(
     scalar_low: Field,
     scalar_high: Field
 ) -> [Field; 2] {
-    std::scalar_mul::variable_base_embedded_curve(point_x, point_y, scalar_low, scalar_high)
+    std::scalar_mul::variable_base_embedded_curve([point_x, point_y], [scalar_low, scalar_high])
 }
