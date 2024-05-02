@@ -14,20 +14,16 @@ pub(super) fn multi_scalar_mul(
     scalars: &[FunctionInput],
     outputs: (Witness, Witness),
 ) -> Result<(), OpcodeResolutionError> {
-    // Collect points and scalars into separate vectors
-    let mut point_elements = Vec::new();
-    let mut scalar_elements = Vec::new();
+    let points: Result<Vec<_>, _> =
+        points.iter().map(|input| witness_to_value(initial_witness, input.witness)).collect();
+    let points: Vec<_> = points?.into_iter().cloned().collect();
 
-    for point_coordinate in points {
-        point_elements.push(witness_to_value(initial_witness, point_coordinate.witness)?);
-    }
-
-    for scalar_limb in scalars {
-        scalar_elements.push(witness_to_value(initial_witness, scalar_limb.witness)?);
-    }
+    let scalars: Result<Vec<_>, _> =
+        scalars.iter().map(|input| witness_to_value(initial_witness, input.witness)).collect();
+    let scalars: Vec<_> = scalars?.into_iter().cloned().collect();
 
     // Call the backend's multi-scalar multiplication function
-    let (res_x, res_y) = backend.multi_scalar_mul(&point_elements, &scalar_elements)?;
+    let (res_x, res_y) = backend.multi_scalar_mul(&points, &scalars)?;
 
     // Insert the resulting point into the witness map
     insert_value(&outputs.0, res_x, initial_witness)?;
