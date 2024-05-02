@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.1](https://github.com/AztecProtocol/aztec-packages/compare/barretenberg-v0.37.0...barretenberg-v0.37.1) (2024-05-02)
+
+
+### Features
+
+* Osxcross ([#6099](https://github.com/AztecProtocol/aztec-packages/issues/6099)) ([6cc924d](https://github.com/AztecProtocol/aztec-packages/commit/6cc924dc44a36d9ef2aeda05ea69a120898fc272))
+
 ## [0.37.0](https://github.com/AztecProtocol/aztec-packages/compare/barretenberg-v0.36.0...barretenberg-v0.37.0) (2024-05-02)
 
 

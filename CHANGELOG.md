@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.37.1](https://github.com/AztecProtocol/aztec-packages/compare/aztec-packages-v0.37.0...aztec-packages-v0.37.1) (2024-05-02)
+
+
+### Features
+
+* Hash logs inside circuit ([#5934](https://github.com/AztecProtocol/aztec-packages/issues/5934)) ([6b99527](https://github.com/AztecProtocol/aztec-packages/commit/6b99527881345d7aa0dc90cfc61832432d817587))
+* Note hash read requests fixes and refactoring ([#6125](https://github.com/AztecProtocol/aztec-packages/issues/6125)) ([9d03f34](https://github.com/AztecProtocol/aztec-packages/commit/9d03f34ca023c954832889ee8eef65aca60f1b1b))
+* Osxcross ([#6099](https://github.com/AztecProtocol/aztec-packages/issues/6099)) ([6cc924d](https://github.com/AztecProtocol/aztec-packages/commit/6cc924dc44a36d9ef2aeda05ea69a120898fc272))
+
+
+### Bug Fixes
+
+* Boxes use base image ([#6120](https://github.com/AztecProtocol/aztec-packages/issues/6120)) ([ef2589a](https://github.com/AztecProtocol/aztec-packages/commit/ef2589a41f72981e5245f294695c5da8d4f04d0e))
+* Docs release ci setup ([#6159](https://github.com/AztecProtocol/aztec-packages/issues/6159)) ([6d5cfe6](https://github.com/AztecProtocol/aztec-packages/commit/6d5cfe65dadf56b3f9094a2662b32792dd1a9520))
+* **docs:** Fix broken link in tree implementations page ([#6143](https://github.com/AztecProtocol/aztec-packages/issues/6143)) ([b39f1db](https://github.com/AztecProtocol/aztec-packages/commit/b39f1db91942096eb1768a37ba9ecfb94d4e1313))
+* **docs:** Update sandbox reference ([#6094](https://github.com/AztecProtocol/aztec-packages/issues/6094)) ([0641085](https://github.com/AztecProtocol/aztec-packages/commit/06410858fd1b6d0d8a1c225a08b8c6628ad9ddcc))
+* Install aztec-builder ([#6149](https://github.com/AztecProtocol/aztec-packages/issues/6149)) ([0497dcf](https://github.com/AztecProtocol/aztec-packages/commit/0497dcf4876b9e7bd7e7459f8d49a6167fd57323))
+* Scope netlify to yarn bin ([#6162](https://github.com/AztecProtocol/aztec-packages/issues/6162)) ([be8e3c0](https://github.com/AztecProtocol/aztec-packages/commit/be8e3c00837f7b823b74dfad7ef0875265ae35fe))
+* Set up the ci runner for doc deployment ([#6160](https://github.com/AztecProtocol/aztec-packages/issues/6160)) ([e295900](https://github.com/AztecProtocol/aztec-packages/commit/e2959004c132f87b876e7b08ed3b2c3eb99622bf))
+* Use pushed build images. ([#6154](https://github.com/AztecProtocol/aztec-packages/issues/6154)) ([426f7a7](https://github.com/AztecProtocol/aztec-packages/commit/426f7a7c0911512058d5d5d49a3ed9f2ab5ed4e0))
+
+
+### Miscellaneous
+
+* **avm-simulator:** Make shifts take u8 ([#5905](https://github.com/AztecProtocol/aztec-packages/issues/5905)) ([4719ff1](https://github.com/AztecProtocol/aztec-packages/commit/4719ff19e71e27965a3ccf75b7356a27389ee766))
+* **ci:** Force earthly prune if corrupted cache ([#6152](https://github.com/AztecProtocol/aztec-packages/issues/6152)) ([3910314](https://github.com/AztecProtocol/aztec-packages/commit/39103141a56f7f71fffb2d4164f0c4f432704a81))
+* **ci:** Try to make base image more stable ([#6144](https://github.com/AztecProtocol/aztec-packages/issues/6144)) ([979a22d](https://github.com/AztecProtocol/aztec-packages/commit/979a22d5668f5b46c350f2355b60da8bd59e2cda))
+* E2e workaround ([#6158](https://github.com/AztecProtocol/aztec-packages/issues/6158)) ([7794d78](https://github.com/AztecProtocol/aztec-packages/commit/7794d788cb9675dbb4714f850e3a39d6dd3ce990))
+
+
+### Documentation
+
+* Add GlobalVariables to CombinedConstantData ([#6071](https://github.com/AztecProtocol/aztec-packages/issues/6071)) ([cf026d2](https://github.com/AztecProtocol/aztec-packages/commit/cf026d2c5928ce081bfac1e0d85260075b06f418))
+
 ## [0.37.0](https://github.com/AztecProtocol/aztec-packages/compare/aztec-packages-v0.36.0...aztec-packages-v0.37.0) (2024-05-02)
 
 
