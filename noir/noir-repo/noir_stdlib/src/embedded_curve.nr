@@ -18,6 +18,8 @@ impl Add for EmbeddedCurvePoint {
     }
 }
 
+// TODO(benesjan): rename multi_scalar_mul_embedded_curve to multi_scalar_mul and embedded_curve_add to add
+
 // Computes a multi scalar multiplication over the embedded curve.
 // For bn254, We have Grumpkin and Baby JubJub.
 // For bls12-381, we have JubJub and Bandersnatch.
@@ -32,6 +34,17 @@ pub fn multi_scalar_mul_embedded_curve<N>(
 ) -> [Field; 2]
 // docs:end:multi_scalar_mul_embedded_curve
 {}
+
+// TODO(benesjan): docs for this
+pub fn fixed_base_scalar_mul_embedded_curve(
+    scalar_low: Field,
+    scalar_high: Field
+) -> [Field; 2]
+{
+    let g1_x = 1;
+    let g1_y = 17631683881184975370165255887551781615748388533673675138860;
+    multi_scalar_mul_embedded_curve([g1_x, g1_y], [scalar_low, scalar_high])
+}
 
 // This is a hack as returning an `EmbeddedCurvePoint` from a foreign function in brillig returns a [BrilligVariable::SingleAddr; 2] rather than BrilligVariable::BrilligArray
 // as is defined in the brillig bytecode format. This is a workaround which allows us to fix this without modifying the serialization format.
