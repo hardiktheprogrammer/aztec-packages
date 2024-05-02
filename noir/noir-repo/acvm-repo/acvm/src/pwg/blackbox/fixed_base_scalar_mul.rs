@@ -10,40 +10,28 @@ use crate::pwg::{insert_value, witness_to_value, OpcodeResolutionError};
 pub(super) fn multi_scalar_mul(
     backend: &impl BlackBoxFunctionSolver,
     initial_witness: &mut WitnessMap,
-    low: FunctionInput,
-    high: FunctionInput,
+    points: &[FunctionInput],
+    scalars: &[FunctionInput],
     outputs: (Witness, Witness),
 ) -> Result<(), OpcodeResolutionError> {
-    let low = witness_to_value(initial_witness, low.witness)?;
-    let high = witness_to_value(initial_witness, high.witness)?;
+    // Collect points and scalars into separate vectors
+    let mut point_elements = Vec::new();
+    let mut scalar_elements = Vec::new();
 
-    let (pub_x, pub_y) = backend.multi_scalar_mul(low, high)?;
+    for point_coordinate in points {
+        point_elements.push(witness_to_value(initial_witness, point_coordinate.witness)?);
+    }
 
-    insert_value(&outputs.0, pub_x, initial_witness)?;
-    insert_value(&outputs.1, pub_y, initial_witness)?;
+    for scalar_limb in scalars {
+        scalar_elements.push(witness_to_value(initial_witness, scalar_limb.witness)?);
+    }
 
-    Ok(())
-}
+    // Call the backend's multi-scalar multiplication function
+    let (res_x, res_y) = backend.multi_scalar_mul(&point_elements, &scalar_elements)?;
 
-pub(super) fn variable_base_scalar_mul(
-    backend: &impl BlackBoxFunctionSolver,
-    initial_witness: &mut WitnessMap,
-    point_x: FunctionInput,
-    point_y: FunctionInput,
-    scalar_low: FunctionInput,
-    scalar_high: FunctionInput,
-    outputs: (Witness, Witness),
-) -> Result<(), OpcodeResolutionError> {
-    let point_x = witness_to_value(initial_witness, point_x.witness)?;
-    let point_y = witness_to_value(initial_witness, point_y.witness)?;
-    let scalar_low = witness_to_value(initial_witness, scalar_low.witness)?;
-    let scalar_high = witness_to_value(initial_witness, scalar_high.witness)?;
-
-    let (out_point_x, out_point_y) =
-        backend.variable_base_scalar_mul(point_x, point_y, scalar_low, scalar_high)?;
-
-    insert_value(&outputs.0, out_point_x, initial_witness)?;
-    insert_value(&outputs.1, out_point_y, initial_witness)?;
+    // Insert the resulting point into the witness map
+    insert_value(&outputs.0, res_x, initial_witness)?;
+    insert_value(&outputs.1, res_y, initial_witness)?;
 
     Ok(())
 }

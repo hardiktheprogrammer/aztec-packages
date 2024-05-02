@@ -12,6 +12,13 @@ pub fn multi_scalar_mul(
     points: &[FieldElement],
     scalars: &[FieldElement],
 ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
+    if points.len() != scalars.len() {
+        return Err(BlackBoxResolutionError::Failed(
+            BlackBoxFunc::MultiScalarMul,
+            "Points and scalars must have the same length".to_string(),
+        ));
+    }
+
     let mut output_point = grumpkin::SWAffine::zero();
 
     for i in (0..points.len()).step_by(2) {
