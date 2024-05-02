@@ -12,8 +12,8 @@ template <typename Builder> void create_multi_scalar_mul_constraint(Builder& bui
     using cycle_scalar_ct = typename bb::stdlib::cycle_group<Builder>::cycle_scalar;
     using field_ct = bb::stdlib::field_t<Builder>;
 
-    // Weinitialize output_point because we do not have identity element available in cycle_group_ct
-    cycle_group_ct output_point;
+    // We initialize output_point as identity element/point at infinity
+    cycle_group_ct output_point(0, 0, true);
 
     // We iterate over points and scalars in the input, we multiply each pair and then add the output point of the
     // iteration to the output point
@@ -33,13 +33,8 @@ template <typename Builder> void create_multi_scalar_mul_constraint(Builder& bui
         // We multiply input point with the scalar to get the output point of this iteration
         auto iteration_output_point = input_point * scalar;
 
-        if (i == 0) {
-            // If this is the first iteration, we assign the result to the output point
-            output_point = iteration_output_point;
-        } else {
-            // If this is not the first iteration, we add the result to the output point
-            output_point = output_point + iteration_output_point;
-        }
+        // If this is not the first iteration, we add the result to the output point
+        output_point = output_point + iteration_output_point;
     }
 
     // Finally we add the constraints

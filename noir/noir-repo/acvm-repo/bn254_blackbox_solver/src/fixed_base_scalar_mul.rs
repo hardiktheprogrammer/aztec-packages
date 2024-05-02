@@ -7,61 +7,52 @@ use acir::{BlackBoxFunc, FieldElement};
 
 use crate::BlackBoxResolutionError;
 
-/// Performs fixed-base scalar multiplication using the curve's generator point.
+/// Performs multi scalar multiplication of points with scalars.
 pub fn multi_scalar_mul(
-    low: &FieldElement,
-    high: &FieldElement,
+    points: &[FieldElement],
+    scalars: &[FieldElement],
 ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
-    let generator = grumpkin::SWAffine::generator();
-    let generator_x = FieldElement::from_repr(*generator.x().unwrap());
-    let generator_y = FieldElement::from_repr(*generator.y().unwrap());
+    let mut output_point = grumpkin::SWAffine::zero();
 
-    variable_base_scalar_mul(&generator_x, &generator_y, low, high).map_err(|err| match err {
-        BlackBoxResolutionError::Failed(_, message) => {
-            BlackBoxResolutionError::Failed(BlackBoxFunc::MultiScalarMul, message)
+    for i in (0..points.len()).step_by(2) {
+        let point = create_point(points[i], points[i + 1])
+            .map_err(|e| BlackBoxResolutionError::Failed(BlackBoxFunc::MultiScalarMul, e))?;
+
+        let scalar_low: u128 = scalars[i].try_into_u128().ok_or_else(|| {
+            BlackBoxResolutionError::Failed(
+                BlackBoxFunc::MultiScalarMul,
+                format!("Limb {} is not less than 2^128", scalars[i].to_hex()),
+            )
+        })?;
+
+        let scalar_high: u128 = scalars[i + 1].try_into_u128().ok_or_else(|| {
+            BlackBoxResolutionError::Failed(
+                BlackBoxFunc::MultiScalarMul,
+                format!("Limb {} is not less than 2^128", scalars[i + 1].to_hex()),
+            )
+        })?;
+
+        let mut bytes = scalar_high.to_be_bytes().to_vec();
+        bytes.extend_from_slice(&scalar_low.to_be_bytes());
+
+        // Check if this is smaller than the grumpkin modulus
+        let grumpkin_integer = BigUint::from_bytes_be(&bytes);
+
+        if grumpkin_integer >= grumpkin::FrConfig::MODULUS.into() {
+            return Err(BlackBoxResolutionError::Failed(
+                BlackBoxFunc::MultiScalarMul,
+                format!("{} is not a valid grumpkin scalar", grumpkin_integer.to_str_radix(16)),
+            ));
         }
-    })
-}
 
-pub fn variable_base_scalar_mul(
-    point_x: &FieldElement,
-    point_y: &FieldElement,
-    scalar_low: &FieldElement,
-    scalar_high: &FieldElement,
-) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
-    let point1 = create_point(*point_x, *point_y)
-        .map_err(|e| BlackBoxResolutionError::Failed(BlackBoxFunc::VariableBaseScalarMul, e))?;
+        let iteration_output_point =
+            grumpkin::SWAffine::from(point.mul_bigint(grumpkin_integer.to_u64_digits()));
 
-    let scalar_low: u128 = scalar_low.try_into_u128().ok_or_else(|| {
-        BlackBoxResolutionError::Failed(
-            BlackBoxFunc::VariableBaseScalarMul,
-            format!("Limb {} is not less than 2^128", scalar_low.to_hex()),
-        )
-    })?;
-
-    let scalar_high: u128 = scalar_high.try_into_u128().ok_or_else(|| {
-        BlackBoxResolutionError::Failed(
-            BlackBoxFunc::VariableBaseScalarMul,
-            format!("Limb {} is not less than 2^128", scalar_high.to_hex()),
-        )
-    })?;
-
-    let mut bytes = scalar_high.to_be_bytes().to_vec();
-    bytes.extend_from_slice(&scalar_low.to_be_bytes());
-
-    // Check if this is smaller than the grumpkin modulus
-    let grumpkin_integer = BigUint::from_bytes_be(&bytes);
-
-    if grumpkin_integer >= grumpkin::FrConfig::MODULUS.into() {
-        return Err(BlackBoxResolutionError::Failed(
-            BlackBoxFunc::VariableBaseScalarMul,
-            format!("{} is not a valid grumpkin scalar", grumpkin_integer.to_str_radix(16)),
-        ));
+        output_point = grumpkin::SWAffine::from(output_point + iteration_output_point);
     }
 
-    let result = grumpkin::SWAffine::from(point1.mul_bigint(grumpkin_integer.to_u64_digits()));
-    if let Some((res_x, res_y)) = result.xy() {
-        Ok((FieldElement::from_repr(*res_x), FieldElement::from_repr(*res_y)))
+    if let Some((out_x, out_y)) = output_point.xy() {
+        Ok((FieldElement::from_repr(*out_x), FieldElement::from_repr(*out_y)))
     } else {
         Ok((FieldElement::zero(), FieldElement::zero()))
     }
@@ -107,23 +98,31 @@ mod grumpkin_multi_scalar_mul {
 
     #[test]
     fn smoke_test() -> Result<(), BlackBoxResolutionError> {
-        let input = FieldElement::one();
+        // We check that multiplying 1 by generator results in the generator
+        let generator = grumpkin::SWAffine::generator();
+        let generator_x = FieldElement::from_repr(*generator.x().unwrap());
+        let generator_y = FieldElement::from_repr(*generator.y().unwrap());
 
-        let res = multi_scalar_mul(&input, &FieldElement::zero())?;
-        let x = "0000000000000000000000000000000000000000000000000000000000000001";
-        let y = "0000000000000002cf135e7506a45d632d270d45f1181294833fc48d823f272c";
+        let points = [generator_x, generator_y];
+        let scalars = [FieldElement::one(), FieldElement::zero()];
 
-        assert_eq!(x, res.0.to_hex());
-        assert_eq!(y, res.1.to_hex());
+        let res = multi_scalar_mul(&points, &scalars)?;
+
+        assert_eq!(generator_x, res.0);
+        assert_eq!(generator_y, res.1);
         Ok(())
     }
 
     #[test]
     fn low_high_smoke_test() -> Result<(), BlackBoxResolutionError> {
-        let low = FieldElement::one();
-        let high = FieldElement::from(2u128);
+        let generator = grumpkin::SWAffine::generator();
+        let generator_x = FieldElement::from_repr(*generator.x().unwrap());
+        let generator_y = FieldElement::from_repr(*generator.y().unwrap());
 
-        let res = multi_scalar_mul(&low, &high)?;
+        let points = [generator_x, generator_y];
+        let scalars = [FieldElement::one(), FieldElement::from(2u128)];
+
+        let res = multi_scalar_mul(&points, &scalars)?;
         let x = "0702ab9c7038eeecc179b4f209991bcb68c7cb05bf4c532d804ccac36199c9a9";
         let y = "23f10e9e43a3ae8d75d24154e796aae12ae7af546716e8f81a2564f1b5814130";
 
@@ -133,30 +132,44 @@ mod grumpkin_multi_scalar_mul {
     }
 
     #[test]
-    fn rejects_invalid_limbs() {
+    fn rejects_invalid_scalar_limbs() {
+        let generator = grumpkin::SWAffine::generator();
+        let generator_x = FieldElement::from_repr(*generator.x().unwrap());
+        let generator_y = FieldElement::from_repr(*generator.y().unwrap());
+
+        let points = [generator_x, generator_y];
+
         let max_limb = FieldElement::from(u128::MAX);
         let invalid_limb = max_limb + FieldElement::one();
+
+        let scalars = [FieldElement::one(), invalid_limb];
 
         let expected_error = Err(BlackBoxResolutionError::Failed(
             BlackBoxFunc::MultiScalarMul,
             "Limb 0000000000000000000000000000000100000000000000000000000000000000 is not less than 2^128".into(),
         ));
 
-        let res = multi_scalar_mul(&invalid_limb, &FieldElement::zero());
+        let res = multi_scalar_mul(&points, &[FieldElement::one(), invalid_limb]);
         assert_eq!(res, expected_error);
 
-        let res = multi_scalar_mul(&FieldElement::zero(), &invalid_limb);
+        let res = multi_scalar_mul(&points, &[invalid_limb, FieldElement::one()]);
         assert_eq!(res, expected_error);
     }
 
     #[test]
     fn rejects_grumpkin_modulus() {
+        let generator = grumpkin::SWAffine::generator();
+        let generator_x = FieldElement::from_repr(*generator.x().unwrap());
+        let generator_y = FieldElement::from_repr(*generator.y().unwrap());
+
+        let points = [generator_x, generator_y];
+
         let x = grumpkin::FrConfig::MODULUS.to_bytes_be();
 
-        let high = FieldElement::from_be_bytes_reduce(&x[0..16]);
         let low = FieldElement::from_be_bytes_reduce(&x[16..32]);
+        let high = FieldElement::from_be_bytes_reduce(&x[0..16]);
 
-        let res = multi_scalar_mul(&low, &high);
+        let res = multi_scalar_mul(&points, &[low, high]);
 
         assert_eq!(
             res,
@@ -168,40 +181,21 @@ mod grumpkin_multi_scalar_mul {
     }
 
     #[test]
-    fn variable_base_matches_fixed_base_for_generator_on_input(
-    ) -> Result<(), BlackBoxResolutionError> {
-        let low = FieldElement::one();
-        let high = FieldElement::from(2u128);
-
-        let generator = grumpkin::SWAffine::generator();
-        let generator_x = FieldElement::from_repr(*generator.x().unwrap());
-        let generator_y = FieldElement::from_repr(*generator.y().unwrap());
-
-        let fixed_res = multi_scalar_mul(&low, &high)?;
-        let variable_res = variable_base_scalar_mul(&generator_x, &generator_y, &low, &high)?;
-
-        assert_eq!(fixed_res, variable_res);
-        Ok(())
-    }
-
-    #[test]
-    fn variable_base_scalar_mul_rejects_invalid_point() {
+    fn rejects_invalid_point() {
         let invalid_point_x = FieldElement::one();
         let invalid_point_y = FieldElement::one();
         let valid_scalar_low = FieldElement::zero();
         let valid_scalar_high = FieldElement::zero();
 
-        let res = variable_base_scalar_mul(
-            &invalid_point_x,
-            &invalid_point_y,
-            &valid_scalar_low,
-            &valid_scalar_high,
+        let res = multi_scalar_mul(
+            &[invalid_point_x, invalid_point_y],
+            &[valid_scalar_low, valid_scalar_high],
         );
 
         assert_eq!(
             res,
             Err(BlackBoxResolutionError::Failed(
-                BlackBoxFunc::VariableBaseScalarMul,
+                BlackBoxFunc::MultiScalarMul,
                 "Point (0000000000000000000000000000000000000000000000000000000000000001, 0000000000000000000000000000000000000000000000000000000000000001) is not on curve".into(),
             ))
         );

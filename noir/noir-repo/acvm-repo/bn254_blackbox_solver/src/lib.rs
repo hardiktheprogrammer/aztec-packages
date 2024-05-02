@@ -9,9 +9,7 @@ mod fixed_base_scalar_mul;
 mod poseidon2;
 mod wasm;
 
-pub use fixed_base_scalar_mul::{
-    embedded_curve_add, fixed_base_scalar_mul, variable_base_scalar_mul,
-};
+pub use fixed_base_scalar_mul::{embedded_curve_add, multi_scalar_mul};
 pub use poseidon2::poseidon2_permutation;
 use wasm::Barretenberg;
 
@@ -91,22 +89,12 @@ impl BlackBoxFunctionSolver for Bn254BlackBoxSolver {
         })
     }
 
-    fn fixed_base_scalar_mul(
+    fn multi_scalar_mull(
         &self,
-        low: &FieldElement,
-        high: &FieldElement,
+        points: &[FieldElement],
+        scalars: &[FieldElement],
     ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
-        fixed_base_scalar_mul(low, high)
-    }
-
-    fn variable_base_scalar_mul(
-        &self,
-        point_x: &FieldElement,
-        point_y: &FieldElement,
-        low: &FieldElement,
-        high: &FieldElement,
-    ) -> Result<(FieldElement, FieldElement), BlackBoxResolutionError> {
-        variable_base_scalar_mul(point_x, point_y, low, high)
+        multi_scalar_mull(points, scalars)
     }
 
     fn ec_add(

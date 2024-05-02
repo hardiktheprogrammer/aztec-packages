@@ -17,7 +17,6 @@
 #include "recursion_constraint.hpp"
 #include "schnorr_verify.hpp"
 #include "sha256_constraint.hpp"
-#include "variable_base_scalar_mul.hpp"
 #include <utility>
 
 namespace acir_format {

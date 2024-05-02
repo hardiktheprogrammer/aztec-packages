@@ -142,8 +142,8 @@ pub(crate) fn evaluate_black_box<Solver: BlackBoxFunctionSolver>(
             let scalars: Vec<FieldElement> =
                 read_heap_vector(memory, scalars).iter().map(|x| x.try_into().unwrap()).collect();
 
-            let values = solver.multi_scalar_mul(&points, &scalars)?;
-            memory.write_slice(memory.read_ref(result.pointer), &values);
+            let (x, y) = solver.multi_scalar_mul(&points, &scalars)?;
+            memory.write_slice(memory.read_ref(result.pointer), &[x.into(), y.into()]);
             Ok(())
         }
         BlackBoxOp::EmbeddedCurveAdd { input1_x, input1_y, input2_x, input2_y, result } => {
@@ -292,7 +292,6 @@ fn black_box_function_from_op(op: &BlackBoxOp) -> BlackBoxFunc {
         BlackBoxOp::PedersenCommitment { .. } => BlackBoxFunc::PedersenCommitment,
         BlackBoxOp::PedersenHash { .. } => BlackBoxFunc::PedersenHash,
         BlackBoxOp::MultiScalarMul { .. } => BlackBoxFunc::MultiScalarMul,
-        BlackBoxOp::VariableBaseScalarMul { .. } => BlackBoxFunc::VariableBaseScalarMul,
         BlackBoxOp::EmbeddedCurveAdd { .. } => BlackBoxFunc::EmbeddedCurveAdd,
         BlackBoxOp::BigIntAdd { .. } => BlackBoxFunc::BigIntAdd,
         BlackBoxOp::BigIntSub { .. } => BlackBoxFunc::BigIntSub,
