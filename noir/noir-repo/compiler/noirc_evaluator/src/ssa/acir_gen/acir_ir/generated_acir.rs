@@ -725,12 +725,10 @@ fn black_box_expected_output_size(name: BlackBoxFunc) -> Option<usize> {
         | BlackBoxFunc::EcdsaSecp256k1
         | BlackBoxFunc::EcdsaSecp256r1 => Some(1),
 
-        // Multi scalar multiplications has a variable output length (depending on the num input points and scalars)
-        BlackBoxFunc::MultiScalarMul => None,
-
         // Output of operations over the embedded curve
         // will be 2 field elements representing the point.
-        BlackBoxFunc::EmbeddedCurveAdd => Some(2),
+        BlackBoxFunc::MultiScalarMul
+        | BlackBoxFunc::EmbeddedCurveAdd => Some(2),
 
         // Big integer operations return a big integer
         BlackBoxFunc::BigIntAdd

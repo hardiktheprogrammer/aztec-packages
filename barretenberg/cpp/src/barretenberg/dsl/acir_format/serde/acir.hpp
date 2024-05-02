@@ -744,10 +744,9 @@ struct BlackBoxOp {
     };
 
     struct MultiScalarMul {
-        // TODO(benesjan): is it correct to use `HeapVector` for all these?
         Program::HeapVector points;
         Program::HeapVector scalars;
-        Program::HeapVector result;
+        Program::HeapArray output;
 
         friend bool operator==(const MultiScalarMul&, const MultiScalarMul&);
         std::vector<uint8_t> bincodeSerialize() const;

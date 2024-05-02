@@ -68,10 +68,9 @@ pub enum BlackBoxOp {
     },
     /// Performs multi scalar multiplication over the embedded curve.
     MultiScalarMul {
-        // TODO(benesjan): is it correct to use `HeapVector` for all these?
         points: HeapVector,
         scalars: HeapVector,
-        outputs: HeapVector,
+        outputs: HeapArray,
     },
     /// Performs addition over the embedded curve.
     EmbeddedCurveAdd {

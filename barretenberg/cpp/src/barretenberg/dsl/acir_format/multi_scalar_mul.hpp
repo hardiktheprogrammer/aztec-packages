@@ -6,13 +6,13 @@
 namespace acir_format {
 
 struct MultiScalarMul {
-    uint32_t low;
-    uint32_t high;
-    uint32_t pub_key_x;
-    uint32_t pub_key_y;
+    std::vector<uint32_t> points;
+    std::vector<uint32_t> scalars;
+    uint32_t out_point_x;
+    uint32_t out_point_y;
 
     // for serialization, update with any new fields
-    MSGPACK_FIELDS(low, high, pub_key_x, pub_key_y);
+    MSGPACK_FIELDS(points, scalars, out_point_x, out_point_y);
     friend bool operator==(MultiScalarMul const& lhs, MultiScalarMul const& rhs) = default;
 };
 

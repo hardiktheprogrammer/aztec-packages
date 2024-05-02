@@ -81,15 +81,8 @@ pub enum BlackBoxFuncCall {
         output: Witness,
     },
     MultiScalarMul {
-        low: FunctionInput,
-        high: FunctionInput,
-        outputs: (Witness, Witness),
-    },
-    VariableBaseScalarMul {
-        point_x: FunctionInput,
-        point_y: FunctionInput,
-        scalar_low: FunctionInput,
-        scalar_high: FunctionInput,
+        points: Vec<FunctionInput>,
+        scalars: Vec<FunctionInput>,
         outputs: (Witness, Witness),
     },
     EmbeddedCurveAdd {

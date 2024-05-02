@@ -311,12 +311,11 @@ void handle_blackbox_func_call(Program::Opcode::BlackBoxFuncCall const& arg, Aci
                     .signature = map(arg.signature, [](auto& e) { return e.witness.value; }),
                 });
             } else if constexpr (std::is_same_v<T, Program::BlackBoxFuncCall::MultiScalarMul>) {
-                // TODO(benesjan): update
                 af.multi_scalar_mul_constraints.push_back(MultiScalarMul{
-                    .low = arg.low.witness.value,
-                    .high = arg.high.witness.value,
-                    .pub_key_x = arg.outputs[0].value,
-                    .pub_key_y = arg.outputs[1].value,
+                    .points = map(arg.points, [](auto& e) { return e.witness.value; }),
+                    .scalars = map(arg.scalars, [](auto& e) { return e.witness.value; }),
+                    .out_point_x = arg.outputs[0].value,
+                    .out_point_y = arg.outputs[1].value,
                 });
             } else if constexpr (std::is_same_v<T, Program::BlackBoxFuncCall::EmbeddedCurveAdd>) {
                 af.ec_add_constraints.push_back(EcAdd{
