@@ -140,7 +140,11 @@ A note cannot actually be "deleted" from the Note Hash Tree because it is an app
 
 :::
 
-> Note: this nullifier derivation example is an oversimplification for the purposes of illustration.
+:::note
+
+This nullifier derivation example is an oversimplification for the purposes of illustration.
+
+:::
 
 #### Initializing Notes wrapped by PrivateMutable
 
